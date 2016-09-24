@@ -1,0 +1,153 @@
+body {
+  font-family: verdana, arial, serif;
+  color: #3a3a3a;
+  font-size:17px;
+}
+
+.main {
+/*    width:1000px;
+    position: absolute;
+    left: 50%;
+    margin-left:-500px;
+*/
+  position: absolute;
+  margin-left: 40px;
+}
+
+
+.button {
+    position: absolute;
+    text-align:center;
+    font-size: 18px;
+    top: 20px;
+    background-color: #ADD8E6;
+    width: 120px;
+    /*height: 30px; */
+    padding: 5px;
+    color: #334;
+    border: 2px solid #779;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #BAE5F0;
+    color: #344;
+    border: 2px solid #779;
+    cursor: pointer;
+}
+
+
+#edit_button {
+    
+    left: 10px;
+} 
+
+
+#save_button {
+    left: 154px;
+}
+
+
+#new_button {
+    left: 298px;
+}
+
+#read_mode {
+    left: 442px;
+}
+
+#save_and_new_button {
+    left: 586px;
+}
+
+.disabled_button, .disabled_button:hover  {
+    background-color: #ccc;
+    font-size: 18px;
+    color: #888; 
+    border: 2px solid #aaa;
+    cursor: auto;
+}
+
+
+div.text {
+    margin-left: 10px;
+    margin-top: 95px; 
+  }
+
+div.orig {
+    margin:16px;
+}
+
+div.trans {
+    margin:16px;
+}
+
+div.phonetic {
+    margin:16px;
+}
+
+.orig .highlighted
+{
+color:#94ad5e;
+}
+
+.trans .highlighted
+{
+color:#eb5d31;
+}
+
+.phonetic .highlighted
+{
+color:#bb2d21;
+}
+
+
+.nothighlighted_read
+{
+color:#333;
+}
+
+.nothighlighted_edit
+{
+color:#777;
+}
+
+
+.word, .highlighted, .nothighlighted_read, .nothighlighted_edit
+{
+ cursor: pointer;
+}
+
+.word:hover, .nothighlighted_read:hover, .nothighlighted_edit:hover
+{
+  color: #39a;
+}
+
+.accent 
+{
+  font-weight:bold;
+}
+
+
+/*
+.edit 
+{
+color:#393;
+}
+*/
+
+.editing
+{
+  border: 2px solid #eb5d31;
+  border-radius: 5px;
+}
+
+#comments 
+{
+  margin-top:30px;
+  font-style:italic;
+  font-size:16px;
+  color: #747474;
+}
+

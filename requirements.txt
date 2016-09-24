@@ -1,0 +1,5 @@
+PyMySQL==0.7.4
+bottle==0.12.9
+lxml==3.6.0
+peewee==2.8.1
+pystache==0.5.4

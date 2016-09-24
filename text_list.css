@@ -1,0 +1,48 @@
+
+
+.text {
+  padding: 10px;
+  padding-left:40px; 
+  padding-right:40px;
+  text-align:center; 
+}
+
+.text a {
+  display:block;
+  color: #444;
+  text-decoration:none;
+}
+
+
+.text a:hover {
+  background-color:#aef;
+}
+
+.text .header {
+ font-size: 24px;
+ color:#222;
+}
+
+
+.newtext {
+  padding: 10px;
+  padding-left:40px; 
+  padding-right:40px;
+  text-align:center; 
+}
+
+.newtext a {
+  display:block;
+  color: #777;
+  text-decoration:none;
+}
+
+
+.newtext a:hover {
+  background-color:#aef;
+}
+
+.newtext .header {
+ font-size: 23px;
+ color:#777;
+}

@@ -1,0 +1,90 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="70px" height="70px" version="1.1"
+     xmlns="http://www.w3.org/2000/svg">
+  <desc>Connections Icon</desc>
+<defs>
+    <style type="text/css"><![CDATA[
+      rect {
+        stroke: rgb(80,80,80);
+        stroke-width: 2px;
+        fill:none; 
+      }  
+      line {
+        stroke: rgb(100,100,100);
+        stroke-width: 2px;
+        /* stroke-dasharray: 2,1; */
+        stroke-linecap: round; 
+      }
+      ellipse {
+        stroke: rgb(80,80,80);
+        stroke-width: 2px;
+        fill:white;
+      }
+    ]]></style>
+  </defs>
+
+    <rect
+       id="mainrect"
+       width="50px"
+       height="50px"
+       x="10px"
+       y="10px"
+       ry="12px" />
+
+
+
+    <line x1="22px" y1="25px" x2="22px" y2="45px" />
+   <!-- <line x1="35px" y1="25px" x2="48px" y2="45px" /> -->
+    <line x1="35px" y1="25px" x2="39.333px" y2="31.666px" />
+    <line x1="43.666px" y1="38.333px" x2="48px" y2="45px" />
+  
+    <line x1="48px" y1="25px" x2="35px" y2="45px" />
+
+    <ellipse
+       style=""
+       id="node11"
+       cx="22px"
+       cy="25px"
+       rx="3px"
+       ry="3px" />
+
+    <ellipse
+       style=""
+       id="node12"
+       cx="35px"
+       cy="25px"
+       rx="3px"
+       ry="3px" />
+
+    <ellipse
+       id="node13"
+       cx="48px"
+       cy="25px"
+       rx="3px"
+       ry="3px" />
+
+    <ellipse
+       id="node21"
+       cx="22px"
+       cy="45px"
+       rx="3px"
+       ry="3px" />
+
+    <ellipse
+       id="node22"
+       cx="35px"
+       cy="45px"
+       rx="3px"
+       ry="3px" />
+
+    <ellipse
+       id="node23"
+       cx="48px"
+       cy="45px"
+       rx="3px"
+       ry="3px" />
+    
+
+</svg>
