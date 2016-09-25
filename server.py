@@ -17,31 +17,12 @@ rr = pystache.Renderer()
 from gen_html_basic import html_code
 
 
-#app = Bottle()
-
 if __name__ == '__main__':
    root = "/"
 else:
    root = "/langcon/"
 
 
-#def page_template(body_html, css_file, js_file):
- # head = '''
-  # <meta charset="utf-8" />
-   # <link rel="stylesheet" type="text/css" href="/css/%s">
-    #<script src="/jquery-1.11.3.min.js"></script>
-   # <script src="/%s"></script>
-    #<title> Словарь </title>
-   #''' % (css_file, js_file)
-  #return '''<!DOCTYPE html>
-   # <html>
-    # <head>
-     #    %s
-    # </head>
-    # <body>
-   # %s
-  # </body>
-  # </html>''' % (head,body_html)
 
 def wrap_in_div(div_class, inside_text):
    res='<div class=%s> %s </div>' % (div_class, inside_text)
@@ -122,14 +103,14 @@ texts_list_tpl = pystache.parse(page_template(menu_array, \
 
 about_tpl = pystache.parse(page_template(menu_array,\
  '''
-    <div class="about">
+<div class="about">
 <p>Language Connector is the editor that allows connecting words in parallel texts.</p> 
 
 <p>When you have a text and its translation, very often the difference in the languages is such that it is not obvious which word is the translation of which. The editor allows the translator to connect manually every word or expression from the text in one language to its counterpart in the text in the other language.</p> 
 
 <p>In the resultant text the connections allow the reader, whithout a deep knowledge or even without any knowledge of the original language, read the translation as if he is reading the original text.<p>  
 
-    </div>
+</div>
 ''',[{'title':'About', 'url':''}])
  )
 
@@ -150,7 +131,7 @@ def main ():
 @route(root+'about.html')
 def about():
   tpl=about_tpl
-  return html_code (rr.render(tpl, {"root":root}),head_code='<title>About the project</title>',css_files=[root+'css/global1.css',root+'css/about.css'])
+  return html_code (rr.render(tpl, {"root":root}),head_code='<title>About the project</title>',css_files=[root+'css/global.css',root+'css/about.css'])
 
 
 @route(root+'texts.html')
@@ -159,7 +140,7 @@ def texts ():
   tpl= texts_list_tpl
   rows=db.Text.select().where((db.Text.name_in_url != 'trash') and (db.Text.visible == 1)).order_by(db.Text.order)
   
-  return html_code (rr.render(tpl,{"text": rows, "root": root}), head_code='<title>Texts</title>',css_files=[root+'css/global1.css',root+'css/text_list.css'])
+  return html_code (rr.render(tpl,{"text": rows, "root": root}), head_code='<title>Texts</title>',css_files=[root+'css/global.css',root+'css/text_list.css'])
 
 
 text_with_edit_tpl = pystache.parse(page_template(menu_array,\
@@ -230,7 +211,6 @@ def show_text (name_in_url, read_only = False):
      fragment = {}
   
      variants = []
-     #print(lang_keys)  
      for k in [lang['key'] for lang in lang_keys]:#list comprehension, 
        variant = {}
      
@@ -249,7 +229,7 @@ def show_text (name_in_url, read_only = False):
 
   html = rr.render(text_with_edit_tpl,{'root': root, 'name_in_url': name_in_url, 'fragment': fragments, 'read_only': read_only , 'text_title': text.name})
 
-  return html_code (html, css_files=[root+'css/global1.css',root+'css/phrases.css'], 
+  return html_code (html, css_files=[root+'css/global.css',root+'css/phrases.css'], 
      js_files=[root+'jquery-1.11.3.min.js',root+'%s/text_name.js' % name_in_url, root+'phrases.js']) 
 
 
@@ -274,7 +254,7 @@ def icon(name):
 
 @route(root+'css/<name>.css')
 def css_file (name):
-   if name in ['global1','phrases','text_list','editor','about','new_fragment']:
+   if name in ['global','phrases','text_list','editor','about','new_fragment']:
       return static_file(name+'.css', root='./')
    else:
       abort(404,'File Not Found')
@@ -317,7 +297,7 @@ def editor (id):
    html='<div class="button" id="edit_button"> Edit group </div> <div class="button" id="save_button"> Save group </div> <div class="button" id="new_button"> New group </div> <div class="button" id="read_mode"> Read mode </div>'+wrap_in_div('text',html)+'<div id="comments"></div>'
    html=wrap_in_div('main', html)
    html=page_template(menu_array, html, [{'title':'Texts', 'url': root+'texts.html'}, {'title':row.text.name, 'url':root+'edit/%s.html'%(row.text.name_in_url)}, {'title':'Edit fragment connections', 'url':''}])
-   return html_code (html, css_files=[root+'css/editor.css', root+'css/global1.css'], 
+   return html_code (html, css_files=[root+'css/editor.css', root+'css/global.css'], 
      js_files=[root+'jquery-1.11.3.min.js', root+'editor.js'], head_code='<title>Connections Editor</title>')
 
   
@@ -387,7 +367,7 @@ def new_fragment(name_in_url):
   lang_keys = json.loads(text.lang_keys)
   form_html=rr.render(form_tpl_new_fragment, {'url':root+name_in_url, 'new_fragment_form':new_fragment_form(lang_keys), 'text_title': text.name, 'name_in_url': name_in_url})
   return html_code (form_html, head_code='<title>Add new fragment</title>',css_files=\
-    [root+'css/global1.css',root+'css/new_fragment.css'])
+    [root+'css/global.css',root+'css/new_fragment.css'])
 
 
 
@@ -395,7 +375,7 @@ def new_fragment(name_in_url):
 
 @route(root+'new_text.html')
 def new_text():
-  return html_code (new_text_form, head_code='<title>Add new text</title>',css_files=[root+'css/global1.css'])
+  return html_code (new_text_form, head_code='<title>Add new text</title>',css_files=[root+'css/global.css'])
 
 @route(root+'save_new_text.html', method="POST")
 def save_new_text():

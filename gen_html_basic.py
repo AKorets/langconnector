@@ -34,8 +34,7 @@ def div(class_name,content,**attr):#**before argument mean that this fn may have
 def html_code(body_code, head_code='', css_files=[], js_files=[]):
 
   main_t = \
-'''
-<!DOCTYPE HTML>
+'''<!DOCTYPE HTML>
 <html>
 <head>
 <meta charset="UTF-8">
