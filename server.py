@@ -340,12 +340,12 @@ form_tpl_new_fragment = pystache.parse (page_template(menu_array,
 
 new_text_form = page_template(menu_array,
  '''
- <form action="%ssave_new_text.html" method="post" >
+ <form id='add_new_text_form' action="%ssave_new_text.html" method="post" >
  <div>
    <p>Text Details:</p>
-   Text title:<input type="text" name="new_text"><br>
-   Text name in url:<input type="text" name="name_in_url"><br>
-   Text description:<input type="text" name="description"><br>
+   Text title: <input type="text" name="new_text"><br>
+   Text name in url: <input type="text" name="name_in_url"><br>
+   Text description: <input type="text" name="description"><br>
  </div>
  <div>
    <p>Number of Languages:</p>
@@ -396,6 +396,7 @@ to do:
   #lang_keys_dict = json.loads ("{\"hh\":\"mm\"}")#json.loads (text_data['lang_keys'])
   #lang_keys_dict = json.loads (text_data['lang_keys'])
   new_text = db.Text(name = text_data['title'], name_in_url=text_data['name_in_url'], description=text_data['description'], lang_keys=text_data['lang_keys'], order = 5, visible = 1)
+  new_text.save() 
 
   redirect (root)
 #make name in url automatically

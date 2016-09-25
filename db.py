@@ -2,7 +2,6 @@ from peewee import *
 import json
 import config
 
-
 db = MySQLDatabase(config.mysql_db_name, config.mysql_host, user=config.mysql_user, password=config.mysql_password)
 
 

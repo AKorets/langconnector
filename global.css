@@ -72,3 +72,8 @@ a.navigator_link:hover
   text-decoration: none;
   color: #a03410;
 }
+
+#add_new_text_form 
+{
+  padding-left: 50px;
+}
