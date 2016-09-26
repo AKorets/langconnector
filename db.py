@@ -1,6 +1,10 @@
 from peewee import *
 import json
-import config
+
+try:
+    import config
+except ImportError:
+    import config_default as config
 
 db = MySQLDatabase(config.mysql_db_name, config.mysql_host, user=config.mysql_user, password=config.mysql_password)
 
