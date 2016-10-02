@@ -7,20 +7,22 @@
   text-align:center; 
 }
 
-.text a {
+.text a.link_to_text {
   display:block;
   color: #444;
   text-decoration:none;
 }
 
 
-.text a:hover {
+.text .header:hover {
   background-color:#aef;
 }
 
 .text .header {
+ display:block;
  font-size: 24px;
  color:#222;
+ position: relative;
 }
 
 
@@ -46,3 +48,26 @@
  font-size: 23px;
  color:#777;
 }
+
+.del_text_button {
+  display: none;
+  border-radius: 5px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #333;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  font-size: 12px;
+  padding: 2px;
+  background-color: #bbb;
+  color: #444;
+  text-decoration:none;
+
+}
+
+.text .header:hover .del_text_button {
+  display: block;
+}
+
+

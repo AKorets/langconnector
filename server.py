@@ -89,16 +89,17 @@ texts_list_tpl = pystache.parse(page_template(menu_array, \
       </div>
     {{#text}}
       <div class=text>
-       <a href="{{root}}edit/{{name_in_url}}.html">
-         <div class="header" >{{name}}</div>
+       
+         <div  class="header">
+           <a class="link_to_text" href="{{root}}edit/{{name_in_url}}.html" >{{name}} </a>
+           <div class="buttons">
+             <a id='del_text_button_{{id}}' class="del_text_button" href='%sdelete_text/{{id}}' onclick="return confirm('Are you sure you want to delete the text?')"> Delete Text </a>
+           </div>
+
+         </div>
          <div class="description">{{description}}</div>
-       </a>
+       
       </div>
-      <div class="buttons">
-        <a onclick="return confirm('Are you sure you want to delete the text?')" href="%sdelete_text/{{id}}">
-          Delete Text
-        </a>
-     </div>
     {{/text}}
     </div>
 '''%(root, root), [{'title':'Texts', 'url':''}])
@@ -130,6 +131,7 @@ def _close_db():
 @route(root)
 def main ():
   return texts()
+
 
 @route(root+'about.html')
 def about():
