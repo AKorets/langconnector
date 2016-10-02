@@ -51,7 +51,6 @@ def new_fragment_form(lang_keys):#fragments_keys is a global variable
 
 
 def move_fragment_to_trash (id):
-  #print(id)
   row=db.Fragment.get(db.Fragment.id==int(id))
   try:
      trash = db.Text.get( db.Text.name_in_url == 'trash' )
@@ -88,7 +87,6 @@ texts_list_tpl = pystache.parse(page_template(menu_array, \
          <div class="header" >Add New Text</div>
        </a>
       </div>
-
     {{#text}}
       <div class=text>
        <a href="{{root}}edit/{{name_in_url}}.html">
@@ -96,9 +94,14 @@ texts_list_tpl = pystache.parse(page_template(menu_array, \
          <div class="description">{{description}}</div>
        </a>
       </div>
+      <div class="buttons">
+        <a onclick="return confirm('Are you sure you want to delete the text?')" href="%sdelete_text/{{id}}">
+          Delete Text
+        </a>
+     </div>
     {{/text}}
     </div>
-'''%(root), [{'title':'Texts', 'url':''}])
+'''%(root, root), [{'title':'Texts', 'url':''}])
  )
 
 about_tpl = pystache.parse(page_template(menu_array,\
@@ -399,7 +402,16 @@ to do:
   new_text.save() 
 
   redirect (root)
-#make name in url automatically
+
+@route(root+'delete_text/<id:re:[0-9]+>')
+def delete_text (id):
+   try:
+    text=db.Text.select().where(db.Text.id==id).get()
+   except db.Text.DoesNotExist:
+    abort(404,"File not Found")
+   text.delete_instance(recursive=True)
+   redirect (root+'texts.html')
+
 
 @route(root+'<name_in_url:re:[0-9A-Za-z_]+>/save_new_fragment', method="POST")
 def save_new_fragment(name_in_url):
@@ -433,6 +445,7 @@ def save_new_fragment(name_in_url):
   fragment = db.Fragment(content= json.dumps(fragment_text,ensure_ascii=False), connections="[]", number_in_text=max_number+1, text=text_row, lang_keys=text_row.lang_keys)#then make it in a separate function.it is creating a new line, it is constructor
   fragment.save()
   redirect (root+"edit/%s.html"%(name_in_url))
+
 
 @route(root+'edit/<id:re:[0-9]+>/save_connections', method="POST")
 def save_connections(id):
