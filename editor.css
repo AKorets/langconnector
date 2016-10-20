@@ -57,6 +57,10 @@ body {
     left: 442px;
 }
 
+#edit_text {
+    left: 586px;
+}
+
 #save_and_new_button {
     left: 586px;
 }

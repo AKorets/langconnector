@@ -34,6 +34,13 @@ def output_fragment (fragment_id, split_text):
        st=st+token["content"] 
   return st
 
+def output_fragment_as_plain_text (split_text):
+  st=''
+  for token in split_text:
+      st=st+token["content"] 
+  return st
+
+
 def words_numbering (split_text):
   i=1
   for token in split_text:

@@ -42,10 +42,18 @@ def page_template (menu_array, template, locations):
 #make current link of a diff colour
 
 
-def new_fragment_form(lang_keys):#fragments_keys is a global variable
+def new_fragment_form(lang_keys):#insert into template
   textarea_fragments=''
   for lang in lang_keys:
     new_fragment='<p> %s:  <br> <textarea cols="50", rows="10", name="text_%s"></textarea></p>' % (lang['caption'], lang['key'])
+    textarea_fragments=textarea_fragments+new_fragment
+  return (textarea_fragments)
+
+def edit_fragment_form(lang_keys, fragment_variants):#insert into template
+  textarea_fragments=''
+  for lang in lang_keys:
+    fragment_var_text = output_fragment_as_plain_text (fragment_variants[lang['key']])
+    new_fragment='<p> %s:  <br> <textarea cols="50", rows="10", name="text_%s">%s</textarea></p>' % (lang['caption'], lang['key'], fragment_var_text)
     textarea_fragments=textarea_fragments+new_fragment
   return (textarea_fragments)
 
@@ -167,7 +175,7 @@ text_with_edit_tpl = pystache.parse(page_template(menu_array,\
            {{#variant}}<div class="{{class_name}}" id="{{var_id}}">{{{content}}}</div>{{/variant}} 
             {{^read_only}}
             <div class="buttons">
-              <a class="edit_fragment_link" href="{{root}}edit/{{id}}/">Edit Connections</a>
+              <a class="edit_fragment_link" href="{{root}}edit_fragment/{{id}}/">Edit Fragment</a>
               <a class="delete_fragment_link" onclick="return confirm('Are you sure you want to delete the fragment?')" href="{{root}}delete/{{id}}/">Delete Fragment</a> 
             </div>
             {{/read_only}}
@@ -292,20 +300,32 @@ def get_fragments_and_connections(name_in_url):
 def editor_js ():
    return static_file('editor.js', root='./')
 
-@route(root+'edit/<id:re:[0-9]+>/')#change into template
+@route(root+'edit_fragment/<id:re:[0-9]+>/')#change into template
 def editor (id):
    html =''
    row=db.Fragment.get(db.Fragment.id==id)
    frag_vars = json.loads(row.content)
    lang_keys = json.loads(row.lang_keys)
    html = html + "\n".join ( [("<div class=\"%s\" id=\"%s\" >" % (k,k+str(row.id)))+output_fragment (k+str(row.id),accents(frag_vars[k]))+"</div>" for k in [lang['key'] for lang in lang_keys] ] )
-   html='<div class="button" id="edit_button"> Edit group </div> <div class="button" id="save_button"> Save group </div> <div class="button" id="new_button"> New group </div> <div class="button" id="read_mode"> Read mode </div>'+wrap_in_div('text',html)+'<div id="comments"></div>'
+   html='<div class="button" id="edit_button"> Edit group </div> <div class="button" id="save_button"> Save group </div> <div class="button" id="new_button"> New group </div> <div class="button" id="read_mode"> Read mode </div> <div class="button" id="edit_text"> Edit text </div>'+wrap_in_div('text',html)+'<div id="comments"></div>'
    html=wrap_in_div('main', html)
-   html=page_template(menu_array, html, [{'title':'Texts', 'url': root+'texts.html'}, {'title':row.text.name, 'url':root+'edit/%s.html'%(row.text.name_in_url)}, {'title':'Edit fragment connections', 'url':''}])
+   html=page_template(menu_array, html, [{'title':'Texts', 'url': root+'texts.html'}, {'title':row.text.name, 'url':root+'edit/%s.html'%(row.text.name_in_url)}, {'title':'Edit fragment', 'url':''}])
    return html_code (html, css_files=[root+'css/editor.css', root+'css/global.css'], 
      js_files=[root+'jquery-1.11.3.min.js', root+'editor.js'], head_code='<title>Connections Editor</title>')
 
-  
+@route(root+'edit_fragment/<id:re:[0-9]+>/edit_fragment_text.html')
+def edit_fragment_text (id):
+  try:
+   row=db.Fragment.get(db.Fragment.id==id)
+  except db.Fragment.DoesNotExist:
+    abort(404,"File not Found")
+
+  frag_vars = json.loads(row.content)
+  lang_keys = json.loads(row.lang_keys)
+  form_html=rr.render(form_tpl_edit_fragment, {'id':id, 'edit_fragment_form':edit_fragment_form(lang_keys, frag_vars), 'text_title': row.text.name, 'name_in_url': row.text.name_in_url, 'confirm_block':(len(json.loads(row.connections))!=0)})
+  return html_code (form_html, head_code='<title>Edit fragment</title>',css_files=\
+    [root+'css/global.css'])
+
 
 @route(root+'delete/<id:re:[0-9]+>/')
 def delete_fragment (id):
@@ -320,7 +340,7 @@ def delete_fragment (id):
 
 
 #this is for ajax
-@route(root+'edit/<id:re:[0-9]+>/data.json')
+@route(root+'edit_fragment/<id:re:[0-9]+>/data.json')
 def get_fragment_json (id):
    row=db.Fragment.get(db.Fragment.id==int(id))
    lang_keys = json.loads(row.lang_keys)
@@ -332,6 +352,17 @@ def get_fragment_json (id):
    connections = json.loads(row.connections)
    res={"fragments":fragments, "connections":connections}
    return json.dumps(res)
+
+form_tpl_edit_fragment = pystache.parse (page_template(menu_array,
+ '''
+ <div class="edit_fragment_form">
+ <form action="%sedit_fragment/{{id}}/edit_fragment_text.html/save_edited_fragment" method="post" >
+ <p>Edit fragment </p> {{{edit_fragment_form}}}
+ <input type="submit" value="Save changes" {{#confirm_block}}onclick="return confirm ('All the existing connections will be lost')"{{/confirm_block}}')>
+ </form>
+ </div>
+ '''%(root), [{'title':'Texts', 'url': root+'texts.html'}, {'title':'{{text_title}}', 'url':root+'edit/{{name_in_url}}.html'}, {'title':'Edit fragment', 'url': root+'edit_fragment/{{id}}/'}, {'title':'Edit fragment text', 'url': ''}]))
+
 
 form_tpl_new_fragment = pystache.parse (page_template(menu_array,
  '''
@@ -436,7 +467,7 @@ def save_new_fragment(name_in_url):
 
   for key in [lang['key'] for lang in lang_keys]:
     text = request.forms.getunicode ('text_%s' %(key))
-    text = html2text(text) 
+    text = html2text(text) #this is for safety and for future editor
     split_text = words_split(text)
     numbered_split_text = words_numbering (split_text)
     fragment_text['%s'%(key)] = numbered_split_text
@@ -449,7 +480,30 @@ def save_new_fragment(name_in_url):
   redirect (root+"edit/%s.html"%(name_in_url))
 
 
-@route(root+'edit/<id:re:[0-9]+>/save_connections', method="POST")
+@route(root+'edit_fragment/<id:re:[0-9]+>/edit_fragment_text.html/save_edited_fragment', method="POST")
+def save_edited_fragment(id):
+  id_number = int(id)#do this everywhere with id
+  try:
+   row=db.Fragment.get(db.Fragment.id==id_number)
+  except db.Fragment.DoesNotExist:
+    abort(404,"File not Found")
+  
+  fragment_text = {}
+  lang_keys = json.loads(row.lang_keys)
+
+  for key in [lang['key'] for lang in lang_keys]:
+     fragment_var_text = request.forms.getunicode ('text_%s' %(key))
+     text = html2text(fragment_var_text) #this is for safety and for future editor
+     split_text = words_split(text)
+     numbered_split_text = words_numbering (split_text)
+     fragment_text['%s'%(key)] = numbered_split_text
+
+  row.content = json.dumps(fragment_text,ensure_ascii=False)
+  row.connections = "[]"
+  row.save()
+  redirect (root+"edit_fragment/%d/"%(id_number))
+
+@route(root+'edit_fragment/<id:re:[0-9]+>/save_connections', method="POST")
 def save_connections(id):
   conn = request.forms.getunicode ('connections')
   #print (conn) 

@@ -122,7 +122,7 @@ function parse_word_full_id(full_id)
 
 
 function Screen(list_of_words_ids) {//this is virtual DOM.this is intermediary between the program and DOM.through this we say whhat must be on the screen. how to do this decides this object, basing on what is on the screen now.later this class will be responsible for colouring too, for all the output
-   this.buttons_states={"#edit_button": "enabled", "#save_button": "enabled", "#new_button": "enabled", "#read_mode": "enabled"};
+   this.buttons_states={"#edit_button": "enabled", "#save_button": "enabled", "#new_button": "enabled", "#read_mode": "enabled", "#edit_text": "enabled"};
    
    this.enableButton = function (button_id) {
       if (this.buttons_states[button_id]=="disabled") {
@@ -166,6 +166,7 @@ function Screen(list_of_words_ids) {//this is virtual DOM.this is intermediary b
               this.wordHighlight(word_id, "nothighlighted_read");
           }
           this.enableButton("#new_button");
+          this.enableButton("#edit_text");
           this.disableButton("#read_mode");
           this.comments('read');
           $(".text").removeClass("editing");
@@ -178,6 +179,7 @@ function Screen(list_of_words_ids) {//this is virtual DOM.this is intermediary b
             this.wordHighlight(word_id, "nothighlighted_edit");
          }
          this.disableButton("#new_button");
+         this.disableButton("#edit_text");
          this.enableButton("#read_mode");
         this.comments('edit');
         $(".text").addClass("editing");
@@ -224,6 +226,7 @@ function Automaton (connections_of_fragment_versions, screen, fragments) {//crea
   this.output.disableButton("#read_mode");
   this.output.disableButton("#edit_button");
   this.output.enableButton("#new_button");
+  this.output.enableButton("#edit_text");
   this.do_action= function (action, word_full_id) {
   
    switch (this.state) {
@@ -264,6 +267,7 @@ function Automaton (connections_of_fragment_versions, screen, fragments) {//crea
           case 'read_mode_click':
           break;
 
+          
         }
       break;
 
@@ -289,8 +293,9 @@ function Automaton (connections_of_fragment_versions, screen, fragments) {//crea
 
           case 'save_button_click':
             this.preprocessed_connections=clone(this.cloned_preprocessed_connections);
+            this.connections = backPreprocessConnections(this.cloned_preprocessed_connections,this.fragments)
             $.post('save_connections',
-                   {connections: JSON.stringify(backPreprocessConnections(this.cloned_preprocessed_connections,this.fragments))},
+                   {connections: JSON.stringify(this.connections)},
                    function(result){}) 
             this.state='read';
           break;
@@ -340,6 +345,17 @@ $(document).ready(function(){
      $("#new_button").click (function() {automaton.do_action("new_button_click", 0);});
 
      $("#read_mode").click (function() {automaton.do_action("read_mode_click", 0);});
+
+     $("#edit_text").click (function() {
+
+        if ((automaton.connections.length==0) || 
+            (confirm ( 'Editing this text will lead to the loss of all existing connections for this fragment.'
+                      +'\n\nDo you want to proceed?'))) 
+        {
+            window.location.assign ("edit_fragment_text.html");
+        }
+
+     });
 
      $(".word").click (function() {
                                 automaton.do_action("word_click", $(this).attr("id"));

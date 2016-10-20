@@ -125,6 +125,19 @@ background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEYAAABGCAY
   /*font-style:italic;*/
 }
 
+.edit_fragment_text_link
+{
+display:block;
+position:absolute;
+left:650px;
+top:80px;
+text-decoration:none;
+color:#555;
+padding: 25px;
+padding-left: 80px;
+background-repeat: no-repeat;
+}
+
 .text_mode_link
 {
   display:block;

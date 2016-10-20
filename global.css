@@ -77,3 +77,15 @@ a.navigator_link:hover
 {
   padding-left: 50px;
 }
+
+.new_fragment_form {
+  padding:0px;
+  margin:0px;
+  margin-left:60px;
+}
+
+.edit_fragment_form {
+  padding:0px;
+  margin:0px;
+  margin-left:60px;
+}
