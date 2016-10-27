@@ -61,6 +61,10 @@ body {
     left: 586px;
 }
 
+#add_comment {
+    left: 730px;
+}
+
 #save_and_new_button {
     left: 586px;
 }
@@ -155,3 +159,9 @@ color:#393;
   color: #747474;
 }
 
+.comment {
+ margin: 20px;
+ margin-left: 26px;
+ font-size: 15px;
+ color: #5a5a5a;
+}

@@ -171,9 +171,10 @@ text_with_edit_tpl = pystache.parse(page_template(menu_array,\
 
     <div class="fragments{{#read_only}} read_mode{{/read_only}}">
       {{#fragment}}
-         <div class="fragment"> 
+         <div class="fragment" id="fragment_{{id}}"> 
            {{#variant}}<div class="{{class_name}}" id="{{var_id}}">{{{content}}}</div>{{/variant}} 
             {{^read_only}}
+            <div class="comment"></div>
             <div class="buttons">
               <a class="edit_fragment_link" href="{{root}}edit_fragment/{{id}}/">Edit Fragment</a>
               <a class="delete_fragment_link" onclick="return confirm('Are you sure you want to delete the fragment?')" href="{{root}}delete/{{id}}/">Delete Fragment</a> 
@@ -289,16 +290,35 @@ def get_fragments_and_connections(name_in_url):
    for row in db.Fragment.select().where( db.Fragment.text == text ).order_by( db.Fragment.number_in_text ):
      lang_keys = json.loads(row.lang_keys)
      fragments = {}
-     for k in [lang['key'] for lang in lang_keys]:
+     lang_keys_list=[lang['key'] for lang in lang_keys]#list comprehension(a list of lang keys)
+     for k in lang_keys_list:
        fragments[k] = k+str(row.id)
      connections = json.loads(row.connections)
-     res = res + [{"fragments":fragments, "connections":connections}]
+     res = res + [{"fragments":fragments, "connections":connections, "lang_keys":lang_keys_list, "fragment_id":"fragment_"+str(row.id)}]
    
    return json.dumps(res)  
 
 @route(root+'editor.js')
 def editor_js ():
    return static_file('editor.js', root='./')
+
+
+#@route(root+'cleditor/images/<name>.gif')
+#def images(name):
+#   if name in ['toolbar','buttons']:     
+#      return static_file(name+'.gif', root='./images')
+#   else:
+#      abort(404,'File Not Found')
+
+@route(root+'cleditor/<fname:re:(images/)?[0-9A-Za-z._]+>')
+def cleditor_files(fname):
+   return static_file(fname, root='cleditor')
+
+
+#@route(root+'cleditor/jquery.cleditor.js')
+#def jquery_cleditor ():
+#   return static_file('cleditor/jquery.cleditor.js', root='./')
+
 
 @route(root+'edit_fragment/<id:re:[0-9]+>/')#change into template
 def editor (id):
@@ -307,11 +327,11 @@ def editor (id):
    frag_vars = json.loads(row.content)
    lang_keys = json.loads(row.lang_keys)
    html = html + "\n".join ( [("<div class=\"%s\" id=\"%s\" >" % (k,k+str(row.id)))+output_fragment (k+str(row.id),accents(frag_vars[k]))+"</div>" for k in [lang['key'] for lang in lang_keys] ] )
-   html='<div class="button" id="edit_button"> Edit group </div> <div class="button" id="save_button"> Save group </div> <div class="button" id="new_button"> New group </div> <div class="button" id="read_mode"> Read mode </div> <div class="button" id="edit_text"> Edit text </div>'+wrap_in_div('text',html)+'<div id="comments"></div>'
+   html='<div class="button" id="edit_button"> Edit group </div> <div class="button" id="save_button"> Save group </div> <div class="button" id="new_button"> New group </div> <div class="button" id="read_mode"> Read mode </div> <div class="button" id="edit_text"> Edit text </div>'+wrap_in_div('text',html)+'<div class="comment"></div><div id="comments"></div>'
    html=wrap_in_div('main', html)
    html=page_template(menu_array, html, [{'title':'Texts', 'url': root+'texts.html'}, {'title':row.text.name, 'url':root+'edit/%s.html'%(row.text.name_in_url)}, {'title':'Edit fragment', 'url':''}])
-   return html_code (html, css_files=[root+'css/editor.css', root+'css/global.css'], 
-     js_files=[root+'jquery-1.11.3.min.js', root+'editor.js'], head_code='<title>Connections Editor</title>')
+   return html_code (html, css_files=[root+'css/editor.css', root+'css/global.css', root+'cleditor/jquery.cleditor.css'], 
+     js_files=[root+'jquery-1.11.3.min.js', root+'editor.js', root+'cleditor/jquery.cleditor.js'], head_code='<title>Connections Editor</title>')
 
 @route(root+'edit_fragment/<id:re:[0-9]+>/edit_fragment_text.html')
 def edit_fragment_text (id):
@@ -345,12 +365,13 @@ def get_fragment_json (id):
    row=db.Fragment.get(db.Fragment.id==int(id))
    lang_keys = json.loads(row.lang_keys)
    fragments = {}
-   for k in [lang['key'] for lang in lang_keys]:
+   lang_keys_list = [lang['key'] for lang in lang_keys]
+   for k in lang_keys_list:
      fragments[k] = k+str(row.id)
    #print (row.content)
    #print (row.connections)
    connections = json.loads(row.connections)
-   res={"fragments":fragments, "connections":connections}
+   res={"fragments":fragments, "connections":connections, "lang_keys": lang_keys_list}
    return json.dumps(res)
 
 form_tpl_edit_fragment = pystache.parse (page_template(menu_array,

@@ -25,18 +25,18 @@ function get_words_id_list(fragments)
    return res;
 } 
 
-function preprocessConnections (fragments, connections, ids_list) {//so far preprocesses only connections
+function preprocessConnections (fragments, connections, ids_list, lang_keys) {//so far preprocesses only connections
   
   var preprocessed_connections={};
   for (word_id in ids_list) {
        preprocessed_connections[ids_list[word_id]]='nothing';
      }
-  for (i=0; i<connections.length; i++) {
+  for (var i=0; i<connections.length; i++) {
       group_array=connections[i];
-      for (key in group_array) {
-        small_array=group_array[key];
+      for (var j=0; j < lang_keys.length; j++) {
+        small_array=group_array[lang_keys[j]];
         for (word_id in small_array) {
-           frag_id=fragments[key];
+           frag_id=fragments[lang_keys[j]];
            word_id_full=frag_id+"w"+small_array[word_id];
            preprocessed_connections[word_id_full]=i;//make group array number a number and not a string
         }
@@ -48,7 +48,7 @@ function preprocessConnections (fragments, connections, ids_list) {//so far prep
 }
 
 
-function backPreprocessConnections (preprocessed_connections, fragments) {
+function backPreprocessConnections (connections, preprocessed_connections, lang_keys) {
        new_connections=[];
        max_key=0;
        for (word_full_id in preprocessed_connections) {
@@ -60,8 +60,8 @@ function backPreprocessConnections (preprocessed_connections, fragments) {
        //console.log(max_key); 
        for (var i=0; i<=max_key; i++) {
            pattern_for_group={};
-           for (lang in fragments) {
-              pattern_for_group[lang]=[]
+           for (var j=0; j<lang_keys.length; j++) {
+              pattern_for_group[lang_keys[j]]=[];
            }
            new_connections[i]=pattern_for_group;
         
@@ -78,7 +78,14 @@ function backPreprocessConnections (preprocessed_connections, fragments) {
            new_connections[key][word_lang].push(word_id); 
          }
        }
-
+       for (var z=0; z<new_connections.length; z++) {
+         //console.log(z);
+         //console.log(connections);   
+         if ((z<connections.length)&&("_comment" in connections[z])) 
+            new_connections[z]["_comment"]=connections[z]["_comment"];
+         else
+            new_connections[z]["_comment"]="";
+         }
        return new_connections;
 
 }
@@ -123,7 +130,10 @@ function parse_word_full_id(full_id)
 
 function Screen(list_of_words_ids) {//this is virtual DOM.this is intermediary between the program and DOM.through this we say whhat must be on the screen. how to do this decides this object, basing on what is on the screen now.later this class will be responsible for colouring too, for all the output
    this.buttons_states={"#edit_button": "enabled", "#save_button": "enabled", "#new_button": "enabled", "#read_mode": "enabled", "#edit_text": "enabled"};
-   
+   this.comment_editor_visible=false;   
+   this.comment_static_text = false;
+   this.saved_comment = false;
+
    this.enableButton = function (button_id) {
       if (this.buttons_states[button_id]=="disabled") {
         this.buttons_states[button_id]="enabled";
@@ -152,11 +162,45 @@ function Screen(list_of_words_ids) {//this is virtual DOM.this is intermediary b
          if (mode=='read') $("#comments").html('<div class="comments">Please select the group you want to edit and click <b>Edit Group</b> <br>or <br> To create new connections group click <b>New Group</b></div>'); 
          if (mode=='edit') $("#comments").html('<div class="comments"> Click on the words you want to add/remove from the group</div>'); 
        }
+
     this.comments ('read');
 
+    this.show_comment_editor = function () {
+       if (!this.comment_editor_visible ) {
+          $(".comment").html('Comment to this group:<br><br><textarea id="comment_editor" name="comment">'+this.comment_editor_text+'</textarea>'); 
+          console.log('textarea');
+          var editor = $("#comment_editor").cleditor();//enables text editor
+          this.comment_editor_visible = true;
+          var scr = this
+          editor.change(function() 
+              { 
+                scr.comment_editor_text = this.$area.context.value;  // to check in all browsers!!! 
+                //console.log(this.comment_editor_text);
+                if (scr.saved_comment != scr.comment_editor_text ) 
+                {
+                   scr.enableButton("#save_button");
+                } else {
+                   scr.disableButton("#save_button");
+                }
+              } );
+          this.comment_static_text = false;
+       }
+       
+    }
+
+    this.show_comment = function (comment_text) {
+       if (!this.comment_static_text || (this.comment_static_text != comment_text)) {
+          $(".comment").html(comment_text); 
+          this.comment_editor_text = false
+          this.comment_editor_visible = false
+          this.comment_static_text = comment_text;
+       }
+    }
+
    this.show_on_screen=
-     function (preprocessed_connections,cloned_preprocessed_connections,selected_group_number,state,selected_group) {
+     function (preprocessed_connections,cloned_preprocessed_connections,connections,selected_group_number,state,selected_group) {
         if (state=='read') {   
+           
           for (word_id in preprocessed_connections) {
            //console.log(preprocessed_connections[word_id]);
             if ((preprocessed_connections [word_id]==selected_group_number)&&selected_group) 
@@ -169,8 +213,17 @@ function Screen(list_of_words_ids) {//this is virtual DOM.this is intermediary b
           this.enableButton("#edit_text");
           this.disableButton("#read_mode");
           this.comments('read');
+  
           $(".text").removeClass("editing");
-      }
+          //console.log(selected_group_number); 
+          //console.log(connections[selected_group_number]);
+   
+          if ((selected_group_number != 'nothing') && (selected_group_number<connections.length)&&("_comment" in connections[selected_group_number])) 
+             var comment= connections[selected_group_number]['_comment'];
+          else 
+             comment= '';
+          this.show_comment(comment)
+     }
       else {
         for (word_id in cloned_preprocessed_connections) {        
           if ((cloned_preprocessed_connections [word_id]==selected_group_number)&&selected_group) 
@@ -181,9 +234,19 @@ function Screen(list_of_words_ids) {//this is virtual DOM.this is intermediary b
          this.disableButton("#new_button");
          this.disableButton("#edit_text");
          this.enableButton("#read_mode");
-        this.comments('edit');
-        $(".text").addClass("editing");
-        
+         this.comments('edit');
+         $(".text").addClass("editing");
+         if (!this.comment_editor_visible) { 
+            if ((selected_group_number<connections.length)&&("_comment" in connections[selected_group_number])) 
+               this.comment_editor_text = connections[selected_group_number]['_comment'];
+            else 
+               this.comment_editor_text= '';
+
+            this.saved_comment = this.comment_editor_text;  
+         }
+         
+         this.show_comment_editor ();
+                
       }
      
   //edit_button
@@ -193,8 +256,10 @@ function Screen(list_of_words_ids) {//this is virtual DOM.this is intermediary b
     this.disableButton("#edit_button");
 
   //save_button
-  if ((selected_group)&&(!compare_objects(preprocessed_connections, cloned_preprocessed_connections))&& 
-    (state=='edit')) {
+  if ((state=='edit') && (selected_group) &&
+      (!compare_objects(preprocessed_connections, cloned_preprocessed_connections) ||
+      (this.saved_comment != this.comment_editor_text ))) 
+  {
      this.enableButton("#save_button");
   }
   else {
@@ -203,7 +268,7 @@ function Screen(list_of_words_ids) {//this is virtual DOM.this is intermediary b
   
   }
    
-   this.wordHighlight=function (word_id, highlight_mode) {
+  this.wordHighlight=function (word_id, highlight_mode) {
      if (highlight_mode!=this.words_states_array[word_id]) {
         //console.log(this.words_states_array[word_id]);
         this.words_states_array[word_id]=highlight_mode;
@@ -213,13 +278,14 @@ function Screen(list_of_words_ids) {//this is virtual DOM.this is intermediary b
    }
 }
 
-function Automaton (connections_of_fragment_versions, screen, fragments) {//creates an object when we call it with 'new'
+function Automaton (connections_of_fragment_versions, screen, fragments, lang_keys) {//creates an object when we call it with 'new'
   this.state='read';
   this.selected_group=false;
   this.selected_group_number=0;
   this.fragments=fragments;
   this.connections=connections_of_fragment_versions;
-  this.preprocessed_connections=preprocessConnections(this.fragments,this.connections,get_words_id_list(this.fragments));
+  this.lang_keys=lang_keys;
+  this.preprocessed_connections=preprocessConnections(this.fragments,this.connections,get_words_id_list(this.fragments),this.lang_keys);
   this.cloned_preprocessed_connections=clone(this.preprocessed_connections);
   this.output=screen;
   this.output.disableButton("#save_button");
@@ -293,7 +359,9 @@ function Automaton (connections_of_fragment_versions, screen, fragments) {//crea
 
           case 'save_button_click':
             this.preprocessed_connections=clone(this.cloned_preprocessed_connections);
-            this.connections = backPreprocessConnections(this.cloned_preprocessed_connections,this.fragments)
+            this.connections = backPreprocessConnections(this.connections, this.cloned_preprocessed_connections,this.lang_keys);
+            if (this.selected_group_number < this.connections.length)
+               this.connections[this.selected_group_number]['_comment'] = screen.comment_editor_text;
             $.post('save_connections',
                    {connections: JSON.stringify(this.connections)},
                    function(result){}) 
@@ -305,9 +373,10 @@ function Automaton (connections_of_fragment_versions, screen, fragments) {//crea
 
           case 'read_mode_click':
            this.state='read';
-           if (!group_exists(this.preprocessed_connections, this.selected_group_number))
+           if (!group_exists(this.preprocessed_connections, this.selected_group_number)) {
               this.selected_group=false;
               this.selected_group_number=0;
+           }
           break;
 
         } 
@@ -315,7 +384,7 @@ function Automaton (connections_of_fragment_versions, screen, fragments) {//crea
      }
 
 
-   this.output.show_on_screen (this.preprocessed_connections, this.cloned_preprocessed_connections, this.selected_group_number,   
+   this.output.show_on_screen (this.preprocessed_connections, this.cloned_preprocessed_connections, this.connections , this.selected_group_number,   
                            this.state, this.selected_group);//maybe later make an array called state which will include all these parameters as its items
 
 
@@ -323,6 +392,9 @@ function Automaton (connections_of_fragment_versions, screen, fragments) {//crea
 }
 
 var automaton=''
+
+
+
 
 $(document).ready(function(){
     $.ajax({ 
@@ -336,7 +408,7 @@ $(document).ready(function(){
 
      var screen = new Screen (words_id_list);
      //console.log(screen);
-      automaton = new Automaton (data.connections, screen, data.fragments);
+      automaton = new Automaton (data.connections, screen, data.fragments, data.lang_keys);
 
      $("#edit_button").click (function() {automaton.do_action("edit_button_click", 0);});
 
