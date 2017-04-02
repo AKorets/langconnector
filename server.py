@@ -155,15 +155,16 @@ def texts ():
   
   return html_code (rr.render(tpl,{"text": rows, "root": root}), head_code='<title>Texts</title>',css_files=[root+'css/global.css',root+'css/text_list.css'])
 
-
-text_with_edit_tpl = pystache.parse(page_template(menu_array,\
- '''
-    {{^read_only}}
-    <a class="text_mode_link" href="{{root}}read/{{name_in_url}}.html"> Read Only Mode </a>
-    {{/read_only}}
-    {{#read_only}}
-    <a class="text_mode_link" href="{{root}}edit/{{name_in_url}}.html"> Edit Text </a>
-    {{/read_only}}
+text_template=\
+'''
+    {{#mode_switchers}}
+     {{^read_only}}
+     <a class="text_mode_link" href="{{root}}read/{{name_in_url}}.html"> Read Only Mode </a>
+     {{/read_only}}
+     {{#read_only}}
+     <a class="text_mode_link" href="{{root}}edit/{{name_in_url}}.html"> Edit Text </a>
+     {{/read_only}}
+    {{/mode_switchers}}
  
     {{^read_only}}
     <a class="add_fragment_link" href="{{root}}{{name_in_url}}/new_fragment.html">Add New Fragment</a>
@@ -173,8 +174,8 @@ text_with_edit_tpl = pystache.parse(page_template(menu_array,\
       {{#fragment}}
          <div class="fragment" id="fragment_{{id}}"> 
            {{#variant}}<div class="{{class_name}}" id="{{var_id}}">{{{content}}}</div>{{/variant}} 
-            {{^read_only}}
             <div class="comment"></div>
+            {{^read_only}}
             <div class="buttons">
               <a class="edit_fragment_link" href="{{root}}edit_fragment/{{id}}/">Edit Fragment</a>
               <a class="delete_fragment_link" onclick="return confirm('Are you sure you want to delete the fragment?')" href="{{root}}delete/{{id}}/">Delete Fragment</a> 
@@ -183,7 +184,12 @@ text_with_edit_tpl = pystache.parse(page_template(menu_array,\
          </div>
       {{/fragment}}
     </div>
-   ''', [{'title':'Texts', 'url': root+'texts.html'}, {'title':'{{text_title}}', 'url':''}]))
+   '''
+
+
+text_with_edit_tpl = pystache.parse(page_template(menu_array, text_template, [{'title':'Texts', 'url': root+'texts.html'}, {'title':'{{text_title}}', 'url':''}]))
+
+text_with_static_tpl = pystache.parse(text_template)
 
 def detect_hebrew(txt):
   return any("\u0590" <= char <= "\u05EA" for char in txt)#any takes as a parameter the list of booleans,here it takes an element from the first iterator and it orders the element from the second iterator
@@ -204,14 +210,18 @@ def accents(split_text):
 
 @route(root+'edit/<name_in_url:re:[0-9A-Za-z_]+>.html')
 def text_with_edit (name_in_url):
-  return show_text (name_in_url, read_only = False)  
+  return show_text (name_in_url, read_only = False, template = text_with_edit_tpl, mode_switchers = True)  
 
 @route(root+'read/<name_in_url:re:[0-9A-Za-z_]+>.html')
 def text_with_read (name_in_url):
-  return show_text (name_in_url, read_only = True)  
+  return show_text (name_in_url, read_only = True, template = text_with_edit_tpl, mode_switchers = True)  
+
+@route(root+'static/<name_in_url:re:[0-9A-Za-z_]+>.html')
+def text_with_static (name_in_url):
+  return show_text (name_in_url, read_only = True, template = text_with_static_tpl, mode_switchers = False)  
 
 
-def show_text (name_in_url, read_only = False):
+def show_text (name_in_url, read_only = False, template = text_with_edit_tpl, mode_switchers = True):
  
   try:
      text = db.Text.get( db.Text.name_in_url == name_in_url )#foreign key refers to the whole row in peewee
@@ -241,7 +251,7 @@ def show_text (name_in_url, read_only = False):
      fragment['id'] = row.id
      fragments = fragments + [fragment]
 
-  html = rr.render(text_with_edit_tpl,{'root': root, 'name_in_url': name_in_url, 'fragment': fragments, 'read_only': read_only , 'text_title': text.name})
+  html = rr.render(template,{'root': root, 'name_in_url': name_in_url, 'fragment': fragments, 'read_only': read_only , 'text_title': text.name, 'mode_switchers': mode_switchers})
 
   return html_code (html, css_files=[root+'css/global.css',root+'css/phrases.css'], 
      js_files=[root+'jquery-1.11.3.min.js',root+'%s/text_name.js' % name_in_url, root+'phrases.js']) 
@@ -329,7 +339,7 @@ def editor (id):
    html = html + "\n".join ( [("<div class=\"%s\" id=\"%s\" >" % (k,k+str(row.id)))+output_fragment (k+str(row.id),accents(frag_vars[k]))+"</div>" for k in [lang['key'] for lang in lang_keys] ] )
    html='<div class="button" id="edit_button"> Edit group </div> <div class="button" id="save_button"> Save group </div> <div class="button" id="new_button"> New group </div> <div class="button" id="read_mode"> Read mode </div> <div class="button" id="edit_text"> Edit text </div>'+wrap_in_div('text',html)+'<div class="comment"></div><div id="comments"></div>'
    html=wrap_in_div('main', html)
-   html=page_template(menu_array, html, [{'title':'Texts', 'url': root+'texts.html'}, {'title':row.text.name, 'url':root+'edit/%s.html'%(row.text.name_in_url)}, {'title':'Edit fragment', 'url':''}])
+   html=page_template(menu_array, html, [{'title':'Texts', 'url': root+'texts.html'}, {'title':row.text.name, 'url':root+'edit/%s.html#fragment_%s'%(row.text.name_in_url,id)}, {'title':'Edit fragment', 'url':''}])
    return html_code (html, css_files=[root+'css/editor.css', root+'css/global.css', root+'cleditor/jquery.cleditor.css'], 
      js_files=[root+'jquery-1.11.3.min.js', root+'editor.js', root+'cleditor/jquery.cleditor.js'], head_code='<title>Connections Editor</title>')
 
@@ -533,10 +543,8 @@ def save_connections(id):
   row.save()   
   return "Ok"
 
-
-
 if __name__ == '__main__':
-  run(host='localhost', port=8080)
+  run(host='0.0.0.0', port=8080)
 else:
   app = application = default_app()
 
