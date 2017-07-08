@@ -1,20 +1,45 @@
 #!/usr/bin/env python3
 
 from bottle import *
-
 import db
-
 import json
-
 from text_processing import *
 from filters import html2text
-
 import pystache 
+import logging
+from cork import Cork
+from bottle.ext import beaker
+import bottle
 
 rr = pystache.Renderer()
 
 
 from gen_html_basic import html_code
+
+logging.basicConfig(format='localhost - - [%(asctime)s] %(message)s', level=logging.DEBUG)
+log = logging.getLogger(__name__)
+bottle.debug(True)
+
+# Use users.json and roles.json in the local example_conf directory
+aaa = Cork('example_conf', email_sender='federico.ceratto@gmail.com', smtp_url='smtp://smtp.magnet.ie')
+
+app = bottle.app()
+session_opts = {
+    'session.cookie_expires': True,
+    'session.encrypt_key': 'It was an honor to host you, @narendramodi. ',
+    'session.httponly': True,
+    'session.timeout': 3600 * 24,  # 1 day
+    'session.type': 'cookie',
+    'session.validate_key': True,
+}
+app = beaker.middleware.SessionMiddleware(bottle.app(), session_opts)# #  Bottle methods  # #
+
+def postd():
+    return bottle.request.forms
+
+
+def post_get(name, default=''):
+    return bottle.request.POST.get(name, default).strip()
 
 
 if __name__ == '__main__':
@@ -126,6 +151,24 @@ about_tpl = pystache.parse(page_template(menu_array,\
 ''',[{'title':'About', 'url':''}])
  )
 
+@bottle.post('/login')
+def login():
+    """Authenticate users"""
+    username = post_get('username')
+    password = post_get('password')
+    aaa.login(username, password, success_redirect='/', fail_redirect='/login')
+
+@bottle.route('/user_is_anonymous')
+def user_is_anonymous():
+    if aaa.user_is_anonymous:
+        return 'True'
+
+    return 'False'
+
+@bottle.route('/logout')
+def logout():
+    aaa.logout(success_redirect='/login')
+
 
 @hook('before_request')
 def _connect_db():
@@ -210,7 +253,9 @@ def accents(split_text):
 
 @route(root+'edit/<name_in_url:re:[0-9A-Za-z_]+>.html')
 def text_with_edit (name_in_url):
-  return show_text (name_in_url, read_only = False, template = text_with_edit_tpl, mode_switchers = True)  
+	aaa.require(fail_redirect='/login')
+	text_with_edit_tpl
+	return show_text (name_in_url, read_only = False, template = text_with_edit_tpl, mode_switchers = True)  
 
 @route(root+'read/<name_in_url:re:[0-9A-Za-z_]+>.html')
 def text_with_read (name_in_url):
@@ -359,10 +404,11 @@ def edit_fragment_text (id):
 
 @route(root+'delete/<id:re:[0-9]+>/')
 def delete_fragment (id):
+   aaa.require(fail_redirect='/login')
    try:
-    fragment=db.Fragment.select().where(db.Fragment.id==id).get()
+     fragment=db.Fragment.select().where(db.Fragment.id==id).get()
    except db.Fragment.DoesNotExist:
-    abort(404,"File not Found")
+     abort(404,"File not Found")
    name_in_url=fragment.text.name_in_url
    move_fragment_to_trash(id)   
    redirect (root+"edit/%s.html"%(name_in_url))
@@ -372,6 +418,7 @@ def delete_fragment (id):
 #this is for ajax
 @route(root+'edit_fragment/<id:re:[0-9]+>/data.json')
 def get_fragment_json (id):
+   aaa.require(fail_redirect='/login')
    row=db.Fragment.get(db.Fragment.id==int(id))
    lang_keys = json.loads(row.lang_keys)
    fragments = {}
@@ -543,8 +590,22 @@ def save_connections(id):
   row.save()   
   return "Ok"
 
+# Static pages
+
+@bottle.route('/login')
+@bottle.view('login_form')
+def login_form():
+    """Serve login form"""
+    return {}
+
+
+@bottle.route('/sorry_page')
+def sorry_page():
+    """Serve sorry page"""
+    return '<p>Sorry, you are not authorized to perform this action</p>'
+
 if __name__ == '__main__':
-  run(host='0.0.0.0', port=8080)
+  run(app=app, host='0.0.0.0', port=8080)
 else:
   app = application = default_app()
 
