@@ -1,5 +1,6 @@
-from peewee import *
+from peewee import MySQLDatabase, Model, CharField, TextField, IntegerField, ForeignKeyField
 import json
+from cork.backends import SqlAlchemyBackend
 
 try:
     import config
@@ -8,6 +9,10 @@ except ImportError:
 
 db = MySQLDatabase(config.mysql_db_name, config.mysql_host, user=config.mysql_user, password=config.mysql_password)
 
+def getMysqlBackend():
+    connectionString = config.generateConnectioString()
+    sqlBackend = SqlAlchemyBackend(db_full_url = connectionString)
+    return sqlBackend
 
 class Text(Model):
 

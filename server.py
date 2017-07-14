@@ -2,6 +2,7 @@
 
 from bottle import *
 import db
+from db import getMysqlBackend
 import json
 from text_processing import *
 from filters import html2text
@@ -13,15 +14,13 @@ import bottle
 
 rr = pystache.Renderer()
 
-
 from gen_html_basic import html_code
 
 logging.basicConfig(format='localhost - - [%(asctime)s] %(message)s', level=logging.DEBUG)
 log = logging.getLogger(__name__)
 bottle.debug(True)
 
-# Use users.json and roles.json in the local example_conf directory
-aaa = Cork('example_conf', email_sender='federico.ceratto@gmail.com', smtp_url='smtp://smtp.magnet.ie')
+aaa = Cork(backend=getMysqlBackend(), email_sender='federico.ceratto@gmail.com', smtp_url='smtp://smtp.magnet.ie')
 
 app = bottle.app()
 session_opts = {
