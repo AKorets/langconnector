@@ -90,4 +90,9 @@ a.navigator_link:hover
   margin-left:60px;
 }
 
+.login {
+  position:absolute;
+  top:0;
+  right:10em;
+}
 

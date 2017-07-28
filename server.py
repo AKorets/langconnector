@@ -57,7 +57,7 @@ menu_array=[{"name": "About the project", "url": root+"about.html"}, {"name": "T
 def page_template(menu_array, template, locations):
    menu_links = ''#make a separate function for menu
    hor_line = '<div class="hor_line"></div>'
-   login_line = '{{{welcome}}}<br><br>'
+   login_line = '{{{welcome}}}'
    for i in menu_array:
      menu_links = menu_links+'<a class="menu_item" href="%s">%s</a>&nbsp&nbsp&nbsp'%(i['url'], i['name'])
    menu_links_in_div = wrap_in_div("menu", menu_links)
@@ -171,12 +171,98 @@ def user_is_anonymous():
 def logout():
     aaa.logout(success_redirect=root)
 
+@bottle.post('/register')
+def register():
+    """Send out registration email"""
+    aaa.register(post_get('username'), post_get('password'), post_get('email_address'))
+    return 'Please check your mailbox.'
 
+@bottle.route('/validate_registration/:registration_code')
+def validate_registration(registration_code):
+    """Validate registration, create user account"""
+    aaa.validate_registration(registration_code)
+    return 'Thanks. <a href="/login">Go to login</a>'
+
+@bottle.post('/reset_password')
+def send_password_reset_email():
+    """Send out password reset email"""
+    aaa.send_password_reset_email(
+        username=post_get('username'),
+        email_addr=post_get('email_address')
+    )
+    return 'Please check your mailbox.'
+
+
+@bottle.route('/change_password/:reset_code')
+@bottle.view('password_change_form')
+def change_password(reset_code):
+    """Show password change form"""
+    return dict(reset_code=reset_code)
+
+
+@bottle.post('/change_password')
+def change_password():
+    """Change password"""
+    aaa.reset_password(post_get('reset_code'), post_get('password'))
+    return 'Thanks. <a href="/login">Go to login</a>'
+
+# Admin-only pages
+
+@bottle.route('/admin')
+@bottle.view('admin_page')
+def admin():
+    """Only admin users can see this"""
+    aaa.require(role='admin', fail_redirect='/sorry_page')
+    return dict(
+        current_user=aaa.current_user,
+        users=aaa.list_users(),
+        roles=aaa.list_roles()
+    )
+
+
+@bottle.post('/create_user')
+def create_user():
+    try:
+        aaa.create_user(postd().username, postd().role, postd().password)
+        return dict(ok=True, msg='')
+    except Exception as e:
+        return dict(ok=False, msg=e.message)
+
+
+@bottle.post('/delete_user')
+def delete_user():
+    try:
+        aaa.delete_user(post_get('username'))
+        return dict(ok=True, msg='')
+    except Exception as e:
+        print (e)
+        return dict(ok=False, msg=e.message)
+
+
+@bottle.post('/create_role')
+def create_role():
+    try:
+        aaa.create_role(post_get('role'), post_get('level'))
+        return dict(ok=True, msg='')
+    except Exception as e:
+        return dict(ok=False, msg=e.message)
+
+
+@bottle.post('/delete_role')
+def delete_role():
+    try:
+        aaa.delete_role(post_get('role'))
+        return dict(ok=True, msg='')
+    except Exception as e:
+        return dict(ok=False, msg=e.message)
 
 def generateWelcome():
 	if aaa.user_is_anonymous:
-		return "You can <a href='/login'>login</a> here."
-	return "Wecolme {}. ".format(aaa.current_user.username)+"You can <a href='/logout'>logout</a>"
+		return "You can <a href='/login'>login</a> here.  "
+	admin = " "
+	if aaa.current_user.role == "admin":
+		admin = " <a href='/admin'>admin</a> "
+	return "Wecolme {}. ".format(aaa.current_user.username)+"You can <a href='/logout'>logout</a>" + admin + "  "
 
 @hook('before_request')
 def _connect_db():

@@ -16,7 +16,7 @@
       </form>
       <br />
   </div>
-  <div class="box" style="display: none;">
+  <div class="box">
       <h2>Signup</h2>
       <p>Please insert your credentials:</p>
       <form action="register" method="post" name="signup">
@@ -30,7 +30,7 @@
       </form>
       <br />
   </div>
-  <div class="box" style="display: none;">
+  <div class="box">
       <h2>Password reset</h2>
       <p>Please insert your credentials:</p>
       <form action="reset_password" method="post" name="password_reset">
