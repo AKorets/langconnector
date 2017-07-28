@@ -6,19 +6,19 @@ from db import getMysqlBackend
 import json
 from text_processing import *
 from filters import html2text
-import pystache 
+import pystache
 import logging
 from cork import Cork
 from bottle.ext import beaker
 import bottle
+from gen_html_basic import html_code
 
 rr = pystache.Renderer()
 
-from gen_html_basic import html_code
-
 logging.basicConfig(format='localhost - - [%(asctime)s] %(message)s', level=logging.DEBUG)
+
 log = logging.getLogger(__name__)
-bottle.debug(True)
+#bottle.debug(True)
 
 aaa = Cork(backend=getMysqlBackend(), email_sender='federico.ceratto@gmail.com', smtp_url='smtp://smtp.magnet.ie')
 
@@ -54,14 +54,15 @@ def wrap_in_div(div_class, inside_text):
 
 menu_array=[{"name": "About the project", "url": root+"about.html"}, {"name": "Texts", "url": root+"texts.html"}]
 
-def page_template (menu_array, template, locations): 
+def page_template(menu_array, template, locations):
    menu_links = ''#make a separate function for menu
+   hor_line = '<div class="hor_line"></div>'
+   login_line = '{{{welcome}}}<br><br>'
    for i in menu_array:
      menu_links = menu_links+'<a class="menu_item" href="%s">%s</a>&nbsp&nbsp&nbsp'%(i['url'], i['name'])
    menu_links_in_div = wrap_in_div("menu", menu_links)
    navigator_links = navigator(locations)
-   hor_line = '<div class="hor_line"></div>'
-   template = menu_links_in_div +  navigator_links + template
+   template = wrap_in_div("login",login_line)+menu_links_in_div +  navigator_links + template
    return hor_line+wrap_in_div ("container", template)
 #make current link of a diff colour
 
@@ -92,10 +93,12 @@ def move_fragment_to_trash (id):
   row.text=trash
   row.save()
 
-def navigator (locations):
+def navigator(locations): 
+  print("navigator {}".format(locations))
 
   navigator_tpl=pystache.parse('''<div class="navigator">
-      
+
+
       {{#locations}}
         {{#url}}
            <a class="navigator_link" href="{{{url}}}">{{title}}</a> <img class="arrow" src="{{root}}icons/triangle.png" width="20px" height="20px" />
@@ -123,7 +126,7 @@ texts_list_tpl = pystache.parse(page_template(menu_array, \
       <div class=text>
        
          <div  class="header">
-           <a class="link_to_text" href="{{root}}edit/{{name_in_url}}.html" >{{name}} </a>
+           <a class="link_to_text" href="{{root}}read/{{name_in_url}}.html" >{{name}} </a>
            <div class="buttons">
              <a id='del_text_button_{{id}}' class="del_text_button" href='%sdelete_text/{{id}}' onclick="return confirm('Are you sure you want to delete the text?')"> Delete Text </a>
            </div>
@@ -166,8 +169,14 @@ def user_is_anonymous():
 
 @bottle.route('/logout')
 def logout():
-    aaa.logout(success_redirect='/login')
+    aaa.logout(success_redirect=root)
 
+
+
+def generateWelcome():
+	if aaa.user_is_anonymous:
+		return "You can <a href='/login'>login</a> here."
+	return "Wecolme {}. ".format(aaa.current_user.username)+"You can <a href='/logout'>logout</a>"
 
 @hook('before_request')
 def _connect_db():
@@ -186,16 +195,15 @@ def main ():
 @route(root+'about.html')
 def about():
   tpl=about_tpl
-  return html_code (rr.render(tpl, {"root":root}),head_code='<title>About the project</title>',css_files=[root+'css/global.css',root+'css/about.css'])
+  return html_code (rr.render(tpl, {"root":root, "welcome":generateWelcome()}),head_code='<title>About the project</title>',css_files=[root+'css/global.css',root+'css/about.css'])
 
 
 @route(root+'texts.html')
-def texts ():
+def texts():
   
   tpl= texts_list_tpl
   rows=db.Text.select().where((db.Text.name_in_url != 'trash') and (db.Text.visible == 1)).order_by(db.Text.order)
-  
-  return html_code (rr.render(tpl,{"text": rows, "root": root}), head_code='<title>Texts</title>',css_files=[root+'css/global.css',root+'css/text_list.css'])
+  return html_code (rr.render(tpl,{"text": rows, "root": root, "welcome":generateWelcome()}), head_code='<title>Texts</title>',css_files=[root+'css/global.css',root+'css/text_list.css'])
 
 text_template=\
 '''
@@ -295,7 +303,7 @@ def show_text (name_in_url, read_only = False, template = text_with_edit_tpl, mo
      fragment['id'] = row.id
      fragments = fragments + [fragment]
 
-  html = rr.render(template,{'root': root, 'name_in_url': name_in_url, 'fragment': fragments, 'read_only': read_only , 'text_title': text.name, 'mode_switchers': mode_switchers})
+  html = rr.render(template,{'root': root, "welcome":generateWelcome(), 'name_in_url': name_in_url, 'fragment': fragments, 'read_only': read_only , 'text_title': text.name, 'mode_switchers': mode_switchers})
 
   return html_code (html, css_files=[root+'css/global.css',root+'css/phrases.css'], 
      js_files=[root+'jquery-1.11.3.min.js',root+'%s/text_name.js' % name_in_url, root+'phrases.js']) 
@@ -376,6 +384,7 @@ def cleditor_files(fname):
 
 @route(root+'edit_fragment/<id:re:[0-9]+>/')#change into template
 def editor (id):
+   aaa.require(fail_redirect='/login')
    html =''
    row=db.Fragment.get(db.Fragment.id==id)
    frag_vars = json.loads(row.content)
@@ -389,6 +398,7 @@ def editor (id):
 
 @route(root+'edit_fragment/<id:re:[0-9]+>/edit_fragment_text.html')
 def edit_fragment_text (id):
+  aaa.require(fail_redirect='/login')
   try:
    row=db.Fragment.get(db.Fragment.id==id)
   except db.Fragment.DoesNotExist:
@@ -396,7 +406,7 @@ def edit_fragment_text (id):
 
   frag_vars = json.loads(row.content)
   lang_keys = json.loads(row.lang_keys)
-  form_html=rr.render(form_tpl_edit_fragment, {'id':id, 'edit_fragment_form':edit_fragment_form(lang_keys, frag_vars), 'text_title': row.text.name, 'name_in_url': row.text.name_in_url, 'confirm_block':(len(json.loads(row.connections))!=0)})
+  form_html=rr.render(form_tpl_edit_fragment, {'id':id, "welcome":generateWelcome(), 'edit_fragment_form':edit_fragment_form(lang_keys, frag_vars), 'text_title': row.text.name, 'name_in_url': row.text.name_in_url, 'confirm_block':(len(json.loads(row.connections))!=0)})
   return html_code (form_html, head_code='<title>Edit fragment</title>',css_files=\
     [root+'css/global.css'])
 
@@ -472,13 +482,14 @@ new_text_form = page_template(menu_array,
 
 @route(root+'<name_in_url:re:[0-9A-Za-z_]+>/new_fragment.html')
 def new_fragment(name_in_url):
+  aaa.require(fail_redirect='/login')
   try:
     text=db.Text.select().where(db.Text.name_in_url==name_in_url).get()   
   except db.Text.DoesNotExist:
     abort(404,"File not Found")
 
   lang_keys = json.loads(text.lang_keys)
-  form_html=rr.render(form_tpl_new_fragment, {'url':root+name_in_url, 'new_fragment_form':new_fragment_form(lang_keys), 'text_title': text.name, 'name_in_url': name_in_url})
+  form_html=rr.render(form_tpl_new_fragment, {'url':root+name_in_url, "welcome":generateWelcome(), 'new_fragment_form':new_fragment_form(lang_keys), 'text_title': text.name, 'name_in_url': name_in_url})
   return html_code (form_html, head_code='<title>Add new fragment</title>',css_files=\
     [root+'css/global.css',root+'css/new_fragment.css'])
 
@@ -488,10 +499,12 @@ def new_fragment(name_in_url):
 
 @route(root+'new_text.html')
 def new_text():
+  aaa.require(fail_redirect='/login')
   return html_code (new_text_form, head_code='<title>Add new text</title>',css_files=[root+'css/global.css'])
 
 @route(root+'save_new_text.html', method="POST")
 def save_new_text():
+  aaa.require(fail_redirect='/login')
   '''
 to do:
  check name_in_url
@@ -515,6 +528,7 @@ to do:
 
 @route(root+'delete_text/<id:re:[0-9]+>')
 def delete_text (id):
+   aaa.require(fail_redirect='/login')
    try:
     text=db.Text.select().where(db.Text.id==id).get()
    except db.Text.DoesNotExist:
@@ -525,7 +539,7 @@ def delete_text (id):
 
 @route(root+'<name_in_url:re:[0-9A-Za-z_]+>/save_new_fragment', method="POST")
 def save_new_fragment(name_in_url):
-
+  aaa.require(fail_redirect='/login')
   fragment_text = {}
 
   rows=db.Text.select().where(db.Text.name_in_url==name_in_url)
@@ -559,6 +573,7 @@ def save_new_fragment(name_in_url):
 
 @route(root+'edit_fragment/<id:re:[0-9]+>/edit_fragment_text.html/save_edited_fragment', method="POST")
 def save_edited_fragment(id):
+  aaa.require(fail_redirect='/login')
   id_number = int(id)#do this everywhere with id
   try:
    row=db.Fragment.get(db.Fragment.id==id_number)
@@ -582,6 +597,7 @@ def save_edited_fragment(id):
 
 @route(root+'edit_fragment/<id:re:[0-9]+>/save_connections', method="POST")
 def save_connections(id):
+  aaa.require(fail_redirect='/login')
   conn = request.forms.getunicode ('connections')
   #print (conn) 
   row = db.Fragment.get(db.Fragment.id==id)
