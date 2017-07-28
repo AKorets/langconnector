@@ -260,7 +260,7 @@ def generateWelcome():
 	if aaa.user_is_anonymous:
 		return "You can <a href='/login'>login</a> here.  "
 	admin = " "
-	if aaa.current_user.role == "admin":
+	if aaa.current_user.level >= 100:
 		admin = " <a href='/admin'>admin</a> "
 	return "Wecolme {}. ".format(aaa.current_user.username)+"You can <a href='/logout'>logout</a>" + admin + "  "
 
