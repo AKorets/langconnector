@@ -6,8 +6,9 @@ body {
   background-color:#fff;
   margin:0px;
   padding:0px;
+   /* background-image:  url("paper_background.jpg"); */
+  /*  background-color: #F6EBD7; */
 }
-
 
 .container {
   padding:0px;
@@ -22,15 +23,18 @@ body {
 }
 
 .menu {
- padding: 15px;
+ padding: 8px;
  padding-left: 50px;
  color: #555; 
+ background-color: #D0C9BD;
+ border-radius: 5px;
 }
 
 a.menu_item {
   text-decoration: none;
-  color: #777;
-  font-size: 18px;  
+ /*  color: #777; */
+  font-size: 18px;
+  color: #474747;  
 }
 
 a.menu_item:hover {
@@ -54,6 +58,7 @@ a.menu_item:hover {
   
   padding: 20px;
   padding-left: 50px;
+  font-style: italic;
 }
 
 .navigator .arrow {
@@ -91,8 +96,11 @@ a.navigator_link:hover
 }
 
 .login {
-  position:absolute;
+  /* position:absolute;
   top:0;
-  right:10em;
+  right:10em; */
+  margin-bottom: 10px;
+  text-align: right;
+  font-family: verdana, arial, serif;
 }
 
