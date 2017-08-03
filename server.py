@@ -94,7 +94,7 @@ def move_fragment_to_trash (id):
   row.save()
 
 def navigator(locations): 
-  print("navigator {}".format(locations))
+  #print("navigator {}".format(locations))
 
   navigator_tpl=pystache.parse('''<div class="navigator">
 
@@ -297,9 +297,9 @@ text_template=\
      {{^read_only}}
      <a class="text_mode_link" href="{{root}}read/{{name_in_url}}.html"> Read Only Mode </a>
      {{/read_only}}
-     {{#read_only}}
+     {{#show_edit}}
      <a class="text_mode_link" href="{{root}}edit/{{name_in_url}}.html"> Edit Text </a>
-     {{/read_only}}
+     {{/show_edit}}
     {{/mode_switchers}}
  
     {{^read_only}}
@@ -364,9 +364,22 @@ def show_text (name_in_url, read_only = False, template = text_with_edit_tpl, mo
   try:
      text = db.Text.get( db.Text.name_in_url == name_in_url )#foreign key refers to the whole row in peewee
   except db.Text.DoesNotExist:
-     abort(404,"File not Found")     
-
-  fragments = []
+     abort(404,"File not Found")    
+  #text.user_id, text.user))
+  #not read_only and 
+  #if(text.user_id != aaa.current_user.id):
+  #	print('ai ai ai') 
+  eml = 'anonymous'
+  show_edit = False
+  if not aaa.user_is_anonymous:
+  	eml = aaa.current_user.email_addr
+  	tEml = text.user.email_addr
+  	if eml==tEml:
+  		show_edit = read_only #show edit link, when the author is in session
+  	elif not read_only:#only author can edit
+  		abort(401,'only author can edit this text')
+  #print("show_text of {} user_id {} email {} vs current_user.email {}".format(name_in_url, text.user_id, text.user.email_addr,eml))
+  fragments=[]
   for row in db.Fragment.select().where( db.Fragment.text==text ).order_by(db.Fragment.number_in_text):
      frag_vars = json.loads(row.content)
      lang_keys = json.loads(row.lang_keys)
@@ -389,7 +402,7 @@ def show_text (name_in_url, read_only = False, template = text_with_edit_tpl, mo
      fragment['id'] = row.id
      fragments = fragments + [fragment]
 
-  html = rr.render(template,{'root': root, "welcome":generateWelcome(), 'name_in_url': name_in_url, 'fragment': fragments, 'read_only': read_only , 'text_title': text.name, 'mode_switchers': mode_switchers})
+  html = rr.render(template,{'root': root, "welcome":generateWelcome(), 'name_in_url': name_in_url, 'fragment': fragments, 'read_only': read_only, 'show_edit': show_edit, 'text_title': text.name, 'mode_switchers': mode_switchers})
 
   return html_code (html, css_files=[root+'css/global.css',root+'css/phrases.css'], 
      js_files=[root+'jquery-1.11.3.min.js',root+'%s/text_name.js' % name_in_url, root+'phrases.js']) 
@@ -600,6 +613,8 @@ to do:
   proper json
 
   '''
+
+  user = db.User.get(db.User.email_addr==aaa.current_user.email_addr)
   text_data = {}
   text_data['title'] = request.forms.getunicode ('new_text')
   text_data['name_in_url'] = request.forms.getunicode ('name_in_url')
@@ -607,7 +622,7 @@ to do:
   text_data['lang_keys'] =request.forms.getunicode ('lang_keys')#make json.loads
   #lang_keys_dict = json.loads ("{\"hh\":\"mm\"}")#json.loads (text_data['lang_keys'])
   #lang_keys_dict = json.loads (text_data['lang_keys'])
-  new_text = db.Text(name = text_data['title'], name_in_url=text_data['name_in_url'], description=text_data['description'], lang_keys=text_data['lang_keys'], order = 5, visible = 1)
+  new_text = db.Text(name = text_data['title'], name_in_url=text_data['name_in_url'], description=text_data['description'], lang_keys=text_data['lang_keys'], order = 5, visible = 1, user_id = user.id)
   new_text.save() 
 
   redirect (root)

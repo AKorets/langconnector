@@ -1,4 +1,4 @@
-from peewee import MySQLDatabase, Model, CharField, TextField, IntegerField, ForeignKeyField
+from peewee import MySQLDatabase, Model, CharField, TextField, IntegerField, ForeignKeyField, PrimaryKeyField, fn
 import json
 from cork.backends import SqlAlchemyBackend
 import logging
@@ -19,6 +19,14 @@ def getMysqlBackend():
     sqlBackend = SqlAlchemyBackend(db_full_url = connectionString)
     return sqlBackend
 
+class User(Model):
+    id= PrimaryKeyField(null=False)
+    email_addr=CharField()
+    class Meta:
+          database = db 
+          db_table = 'users' 
+
+
 class Text(Model):
 
     name=CharField()
@@ -26,7 +34,8 @@ class Text(Model):
     description=TextField()
     lang_keys=TextField()
     order = IntegerField()
-    visible = IntegerField () # to do convert to boolean 
+    visible = IntegerField() # to do convert to boolean 
+    user = ForeignKeyField(User, related_name='user')
     class Meta:
           database = db 
           db_table = 'texts' 

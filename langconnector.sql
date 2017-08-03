@@ -115,8 +115,11 @@ CREATE TABLE `texts` (
   `lang_keys` text NOT NULL,
   `order` int(11) NOT NULL DEFAULT '0',
   `visible` int(11) NOT NULL DEFAULT '1',
+  `user_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `name_in_url` (`name_in_url`(255))
+  KEY `name_in_url` (`name_in_url`(255)),
+  KEY `user_fk_idx` (`user_id`),
+  CONSTRAINT `user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -126,7 +129,7 @@ CREATE TABLE `texts` (
 
 LOCK TABLES `texts` WRITE;
 /*!40000 ALTER TABLE `texts` DISABLE KEYS */;
-INSERT INTO `texts` VALUES (1,'MelkoText','melkotext','Melkiy Melkiy','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',0,0),(2,'Another Text','trial_text','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',0,0),(3,'Mode Ani','mode_ani','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"phonetic\",\"caption\":\"Phonetic\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',2,1),(4,'Trash','trash','','',0,0),(5,'Hatikva','hatikva','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"phonetic\",\"caption\":\"Phonetic\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',1,1),(6,'Shma Israel','shmaisrael','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"phonetic\",\"caption\":\"Phonetic\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',3,1),(7,'Erev Shabbat','erevshabbat','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"phonetic\",\"caption\":\"Phonetic\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',0,0),(8,'Sefer Yetsira','sefer_yetsira','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"phonetic\",\"caption\":\"Phonetic\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',4,1);
+INSERT INTO `texts` VALUES (1,'MelkoText','melkotext','Melkiy Melkiy','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',0,0,1),(2,'Another Text','trial_text','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',0,0,1),(3,'Mode Ani','mode_ani','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"phonetic\",\"caption\":\"Phonetic\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',2,1,1),(4,'Trash','trash','','',0,0,1),(5,'Hatikva','hatikva','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"phonetic\",\"caption\":\"Phonetic\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',1,1,1),(6,'Shma Israel','shmaisrael','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"phonetic\",\"caption\":\"Phonetic\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',3,1,1),(7,'Erev Shabbat','erevshabbat','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"phonetic\",\"caption\":\"Phonetic\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',0,0,1),(8,'Sefer Yetsira','sefer_yetsira','','[{\"key\":\"orig\",\"caption\":\"Orignal\"},{\"key\":\"phonetic\",\"caption\":\"Phonetic\"},{\"key\":\"trans\",\"caption\":\"Translation\"}]',4,1,1);
 /*!40000 ALTER TABLE `texts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -138,6 +141,7 @@ DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(128) NOT NULL,
   `role` varchar(128) DEFAULT NULL,
   `hash` varchar(256) NOT NULL,
@@ -145,10 +149,11 @@ CREATE TABLE `users` (
   `desc` varchar(128) DEFAULT NULL,
   `creation_date` varchar(128) NOT NULL,
   `last_login` varchar(128) NOT NULL,
-  PRIMARY KEY (`username`),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email_addr_UNIQUE` (`email_addr`),
   KEY `role` (`role`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role`) REFERENCES `roles` (`role`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -157,7 +162,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES ('admin','admin','cLzRnzbEwehP6ZzTREh3A4MXJyNo+TV8Hs4//EEbPbiDoo+dmNg22f2RJC282aSwgyWv/O6s3h42qrA6iHx8yfw=','admin@localhost.local','admin test user','2012-10-28 20:50:26.286723','2012-10-28 20:50:26.286723'),('demo','user','cPelCuLSx/WnImvFaeDo7z5+u3lzBQJU2N3qeT/gbBtcQO6SEt0yWET53Ns+qkH48NVNJGfjoPiYInnOyLNsC6I=','null','null','2017-07-08 00:20:32.849267','2017-07-14 23:13:43.267760');
+INSERT INTO `users` VALUES (1,'admin','admin','cLzRnzbEwehP6ZzTREh3A4MXJyNo+TV8Hs4//EEbPbiDoo+dmNg22f2RJC282aSwgyWv/O6s3h42qrA6iHx8yfw=','admin@localhost.local','admin test user','2012-10-28 20:50:26.286723','2017-08-02 08:00:03.276491'),(3,'abrasha','admin','cCB2VJEUe1HM2fLOPBGCRoMddMtOmi5iV1IkUwdSsU6tZCyOrOC9p8lIv8CSMFVz45aHwhueW3IO3CwU8kLQeNs=','abrasha@gmail.com',NULL,'2017-07-27 00:54:24.650075','2017-08-02 02:06:21.442982'),(5,'demo','user','cMoI5hbJJPCSltSa7kKiGXmxgYiERxnA+bmpU9dmMemEYQSWyVWqMxsnhYQhvVJEakYfzR4qrCy8tAvTpXCF76w=',NULL,NULL,'2017-07-28 23:06:50.681444','2017-07-28 23:07:12.093669');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -170,4 +175,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-07-15  2:36:05
+-- Dump completed on 2017-08-03 16:49:11
